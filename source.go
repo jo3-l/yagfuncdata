@@ -27,12 +27,6 @@ func DefaultSources(fcp FileContentProvider) []Source {
 	}
 }
 
-const (
-	yagpdbRepoOwner = "botlabs-gg"
-	yagpdbRepoName  = "yagpdb"
-	stableBranch    = "master"
-)
-
 var _ Source = (*BaseContextFuncSource)(nil)
 
 // NewBaseContextFuncSource creates a new Source that provides information
