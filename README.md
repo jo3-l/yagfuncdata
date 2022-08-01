@@ -39,7 +39,7 @@ var (
 )
 ```
 
-Notice that every key in the map literal corresponds to a function name. Thus, in order to generate a list of standard context functions, it suffices to parse the content of `common/templates/context.go`, look up the declaration of `StandardFuncMap`, and find all keys present in the map literal. This is precisely the approach that `yagfuncdata` takes in `BaseContextFuncSource.collectStandardContextFuncs`.
+Observe that every key in the map literal corresponds to a function name. Thus, in order to generate a list of standard context functions, it suffices to parse the content of `common/templates/context.go`, look up the declaration of `StandardFuncMap`, and find all keys present in the map literal. This is precisely the approach that `yagfuncdata` takes in `BaseContextFuncSource.collectStandardContextFuncs`.
 
 ## License
 
