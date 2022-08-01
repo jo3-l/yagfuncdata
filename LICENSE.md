@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 
-Copyright © 2021 Joe L.
+Copyright © 2022 Joe L.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
