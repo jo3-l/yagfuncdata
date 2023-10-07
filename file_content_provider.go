@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v55/github"
 )
 
 // DefaultFileContentProvider is a FileContentProvider that accesses files on

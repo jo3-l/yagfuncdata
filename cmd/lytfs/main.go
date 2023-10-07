@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/go-github/v55/github"
 	"github.com/jo3-l/yagfuncdata"
 )
 
@@ -17,7 +18,9 @@ var (
 func usage() {
 	fmt.Fprintln(os.Stderr, `lytfs: list available YAGPDB template function names
 	
-usage: lytfs [-timeout duration]`)
+usage: lytfs [-timeout duration]
+
+To authenticate your requests, pass a GitHub personal access token via the LYTFS_GITHUB_TOKEN environment variable.`)
 	flag.PrintDefaults()
 }
 
@@ -28,7 +31,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	sources := yagfuncdata.DefaultSources(yagfuncdata.DefaultFileContentProvider)
+	fcp := yagfuncdata.DefaultFileContentProvider
+	if token := os.Getenv("LYTFS_GITHUB_TOKEN"); token != "" {
+		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), "botlabs-gg", "yagpdb", "master")
+	}
+	sources := yagfuncdata.DefaultSources(fcp)
 	funcs, err := yagfuncdata.Fetch(ctx, sources)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
