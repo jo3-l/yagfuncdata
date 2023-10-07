@@ -31,13 +31,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	var sources []yagfuncdata.Source
+	fcp := yagfuncdata.DefaultFileContentProvider
 	if token := os.Getenv("YAGFUNCDATA_AUTH_TOKEN"); token != "" {
-		fcp := yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), "botlabs-gg", "yagpdb", "master")
-		sources = yagfuncdata.DefaultSources(fcp)
-	} else {
-		sources = yagfuncdata.DefaultSources(yagfuncdata.DefaultFileContentProvider)
+		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), "botlabs-gg", "yagpdb", "master")
 	}
+	sources := yagfuncdata.DefaultSources(fcp)
 	funcs, err := yagfuncdata.Fetch(ctx, sources)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
