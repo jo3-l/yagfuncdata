@@ -20,7 +20,7 @@ func usage() {
 	
 usage: lytfs [-timeout duration]
 
-To authenticate your requests, pass a GitHub personal access token via the YAGFUNCDATA_AUTH_TOKEN environment variable.`)
+To authenticate your requests, pass a GitHub personal access token via the LYTFS_GITHUB_TOKEN environment variable.`)
 	flag.PrintDefaults()
 }
 
@@ -32,7 +32,7 @@ func main() {
 	defer cancel()
 
 	fcp := yagfuncdata.DefaultFileContentProvider
-	if token := os.Getenv("YAGFUNCDATA_AUTH_TOKEN"); token != "" {
+	if token := os.Getenv("LYTFS_GITHUB_TOKEN"); token != "" {
 		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), "botlabs-gg", "yagpdb", "master")
 	}
 	sources := yagfuncdata.DefaultSources(fcp)
