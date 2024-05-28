@@ -21,7 +21,7 @@ $ go install github.com/jo3-l/yagfuncdata/cmd/lytfs@latest
 
 `yagfuncdata` aims to simplify workflows of projects that require a list of YAGPDB template functions, such as language support extensions for editors. For example, one could imagine setting up a cronjob in CI to run `yagfuncdata` regularly to check for updates and regenerate an asset file when changes are detected.
 
-Note, however, that it is not recommended to run `yagfuncdata` directly in an application as the command is not infallible. Changes to the structure of relevant files defining template functions may cause the generated list to be incomplete, or, worse, for the command to fail entirely. Thus, `yagfuncdata`'s output should be manually vetted by a human against a trusted baseline. A typical process is to set up `yagfuncdata` to run periodically, e.g. via GitHub Actions, and submit a PR with its changes when applicable. This PR is then reviewed by a human and merged if acceptable.
+Note, however, that it is not recommended to run `yagfuncdata` directly in an application as the command is not infallible. Changes to the structure of relevant files defining template functions may cause the generated list to be incomplete, or, worse, cause the command to fail entirely. Thus, `yagfuncdata`'s output should be manually vetted by a human against a trusted baseline. Hence, the CI cronjob suggested above should ideally generate a PR with its changes (which can then be reviewed and approved), as opposed to committing directly to the repository.
 
 ## How does it work?
 
