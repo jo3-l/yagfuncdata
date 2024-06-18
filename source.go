@@ -19,6 +19,7 @@ type Source interface {
 func DefaultSources(fcp FileContentProvider) []Source {
 	return []Source{
 		NewBaseContextFuncSource(fcp),
+		NewInteractionContextFuncSource(fcp),
 		NewBuiltinFuncSource(fcp),
 		NewLogsPluginExtensionFuncSource(fcp),
 		NewTicketsPluginExtensionFuncSource(fcp),
@@ -77,20 +78,26 @@ func (c *BaseContextFuncSource) collectStandardFuncs(f *ast.File) ([]string, err
 	}
 
 	var funcs []string
-	for _, stmt := range fn.Body.List {
+	visitAddContextFuncCalls(fn.Body.List, func(call *ast.CallExpr) {
+		if len(call.Args) > 0 {
+			if name, ok := unpackStringLit(call.Args[0]); ok {
+				funcs = append(funcs, name)
+			}
+		}
+	})
+	return funcs, nil
+}
+
+func visitAddContextFuncCalls(stmts []ast.Stmt, f func(*ast.CallExpr)) {
+	for _, stmt := range stmts {
 		if expr, ok := stmt.(*ast.ExprStmt); ok {
 			if call, ok := expr.X.(*ast.CallExpr); ok {
 				if sel, ok := call.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "addContextFunc" {
-					if len(call.Args) > 0 {
-						if name, ok := unpackStringLit(call.Args[0]); ok {
-							funcs = append(funcs, name)
-						}
-					}
+					f(call)
 				}
 			}
 		}
 	}
-	return funcs, nil
 }
 
 func (c *BaseContextFuncSource) collectStandardContextFuncs(f *ast.File) ([]string, error) {
@@ -117,6 +124,51 @@ func (c *BaseContextFuncSource) collectStandardContextFuncs(f *ast.File) ([]stri
 			funcs = append(funcs, name)
 		}
 	}
+	return funcs, nil
+}
+
+var _ Source = (*InteractionContextFuncSource)(nil)
+
+// NewInteractionContextFuncSource creates a new Source that provides information regarding
+// interaction context functions defined in lib/template/context_interactions.go.
+func NewInteractionContextFuncSource(fcp FileContentProvider) *InteractionContextFuncSource {
+	return &InteractionContextFuncSource{fcp}
+}
+
+type InteractionContextFuncSource struct {
+	fcp FileContentProvider
+}
+
+func (i *InteractionContextFuncSource) Fetch(ctx context.Context) ([]string, error) {
+	const filepath = "common/templates/context_interactions.go"
+	src, err := i.fcp.Get(ctx, filepath)
+	if err != nil {
+		return nil, fmt.Errorf("fetching interaction context functions: %w", err)
+	}
+
+	f, err := parser.ParseFile(token.NewFileSet(), filepath, src, parser.Mode(0))
+	if err != nil {
+		return nil, fmt.Errorf("fetching interaction context functions: %s contains invalid Go code: %w", filepath, err)
+	}
+
+	// func interactionContextFuncs(c *Context) {
+	//   c.addContextFunc(name1, func1)
+	//   c.addContextFunc(name2, func2)
+	//   [...]
+	// }
+	fn, ok := lookupFuncDecl(f, "interactionContextFuncs")
+	if !ok {
+		return nil, errors.New("fetching interaction context functions: no definition for interactionContextFuncs")
+	}
+
+	var funcs []string
+	visitAddContextFuncCalls(fn.Body.List, func(call *ast.CallExpr) {
+		if len(call.Args) > 0 {
+			if name, ok := unpackStringLit(call.Args[0]); ok {
+				funcs = append(funcs, name)
+			}
+		}
+	})
 	return funcs, nil
 }
 
