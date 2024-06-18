@@ -1,6 +1,6 @@
 module github.com/jo3-l/yagfuncdata
 
-go 1.18
+go 1.22
 
 require github.com/google/go-github/v55 v55.0.0
 
