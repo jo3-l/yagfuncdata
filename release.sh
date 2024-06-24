@@ -55,8 +55,8 @@ main() {
         usage
     fi
 
-    refresh-go-cache
     make_tag
+    refresh-go-cache
     make_gh_release
 }
 
