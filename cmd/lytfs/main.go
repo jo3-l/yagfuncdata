@@ -37,10 +37,12 @@ func main() {
 	owner := strings.Split(*repo, "/")[0]
 	repo := strings.Split(*repo, "/")[1]
 
-	fcp := yagfuncdata.DefaultFileContentProvider
+	fcp := yagfuncdata.NewGitHubFileProvider(github.NewClient(nil), owner, repo, *branch)
+
 	if token := os.Getenv("LYTFS_GITHUB_TOKEN"); token != "" {
 		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), owner, repo, *branch)
 	}
+
 	sources := yagfuncdata.DefaultSources(fcp)
 	funcs, err := yagfuncdata.Fetch(ctx, sources)
 	if err != nil {
