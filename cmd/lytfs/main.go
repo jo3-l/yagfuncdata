@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"time"
@@ -12,9 +13,8 @@ import (
 	"github.com/jo3-l/yagfuncdata"
 )
 
-var (
-	timeout = flag.Duration("timeout", 5*time.Second, "timeout for fetching data.")
-)
+var timeout = flag.Duration("timeout", 5*time.Second, "timeout for fetching data")
+var githubRepoRe = regexp.MustCompile("^(.+)/(.+)@(.+)$")
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `lytfs: list available YAGPDB template function names
@@ -26,23 +26,26 @@ To authenticate your requests, pass a GitHub personal access token via the LYTFS
 }
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("lytfs: ")
+
 	flag.Usage = usage
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	owner := "botlabs-gg"
-	repo := "yagpdb"
-	branch := "master"
+	var (
+		owner  = "botlabs-gg"
+		repo   = "yagpdb"
+		branch = "master"
+	)
 
-	target := flag.Arg(0)
-	if target != "" {
-		var targetRegex = regexp.MustCompile(`^([^/]+)/([^@]+)@(.+)$`)
-		matches := targetRegex.FindStringSubmatch(target)
-		if len(matches) != 4 {
-			fmt.Fprintln(os.Stderr, "invalid target format")
-			os.Exit(1)
+	if flag.NArg() > 0 {
+		repoArg := flag.Arg(0)
+		matches := githubRepoRe.FindStringSubmatch(repoArg)
+		if matches == nil {
+			log.Fatalf("invalid source repository %q (format: owner/repo@branch)\n", repoArg)
 		}
 
 		owner = matches[1]
@@ -51,7 +54,6 @@ func main() {
 	}
 
 	fcp := yagfuncdata.NewGitHubFileProvider(github.NewClient(nil), owner, repo, branch)
-
 	if token := os.Getenv("LYTFS_GITHUB_TOKEN"); token != "" {
 		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), owner, repo, branch)
 	}
@@ -59,8 +61,7 @@ func main() {
 	sources := yagfuncdata.DefaultSources(fcp)
 	funcs, err := yagfuncdata.Fetch(ctx, sources)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 
 	for _, name := range funcs {
