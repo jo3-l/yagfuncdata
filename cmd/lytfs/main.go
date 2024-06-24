@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/google/go-github/v55/github"
@@ -14,14 +14,12 @@ import (
 
 var (
 	timeout = flag.Duration("timeout", 5*time.Second, "timeout for fetching data.")
-	repo    = flag.String("repo", "botlabs-gg/yagpdb", "GitHub repository to fetch data from.")
-	branch  = flag.String("branch", "master", "GitHub branch to fetch data from.")
 )
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `lytfs: list available YAGPDB template function names
 	
-usage: lytfs [-timeout duration] [-repo owner/repo] [-branch branch]
+usage: lytfs [owner/repo@branch] [-timeout duration]
 
 To authenticate your requests, pass a GitHub personal access token via the LYTFS_GITHUB_TOKEN environment variable.`)
 	flag.PrintDefaults()
@@ -34,13 +32,28 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	owner := strings.Split(*repo, "/")[0]
-	repo := strings.Split(*repo, "/")[1]
+	owner := "botlabs-gg"
+	repo := "yagpdb"
+	branch := "master"
 
-	fcp := yagfuncdata.NewGitHubFileProvider(github.NewClient(nil), owner, repo, *branch)
+	target := flag.Arg(0)
+	if target != "" {
+		var targetRegex = regexp.MustCompile(`^([^/]+)/([^@]+)@(.+)$`)
+		matches := targetRegex.FindStringSubmatch(target)
+		if len(matches) != 4 {
+			fmt.Fprintln(os.Stderr, "invalid target format")
+			os.Exit(1)
+		}
+
+		owner = matches[1]
+		repo = matches[2]
+		branch = matches[3]
+	}
+
+	fcp := yagfuncdata.NewGitHubFileProvider(github.NewClient(nil), owner, repo, branch)
 
 	if token := os.Getenv("LYTFS_GITHUB_TOKEN"); token != "" {
-		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), owner, repo, *branch)
+		fcp = yagfuncdata.NewGitHubFileProvider(github.NewClient(nil).WithAuthToken(token), owner, repo, branch)
 	}
 
 	sources := yagfuncdata.DefaultSources(fcp)
